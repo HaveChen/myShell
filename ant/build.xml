@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="test">
+	<property file="build.properties" /> <!-- 引入配置文件 -->
+	<!-- svn 比较项目最新路径 -->
+	<property name="svn.url_new" value="${svn._url}" />
+	<!-- svn 比较项目的新版本 -->
+	<property name="svn.new_revision" value="${svn.new_revision}" />
+	<!-- svn 比较项目的旧路径-->
+	<property name="bak.svn.url" value="${bak.svn._url}" />
+	<!-- svn 比较项目的旧版本 -->
+	<property name="svn.old_revision" value="${svn.old_revision}" />
+
+
+	<property name="svn.username" value="${svn.username}" />
+	<property name="svn.password" value="${svn.password}" />
+	
+	<!--基础war包名称及位置-->
+		<property name="tomcats" value="${tomcat.homes}" />
+	<!--基础war包名称及位置-->
+	<property name="basewars" value="${base.wars.classpath}" />
+	<!-- 项目名称 -->
+	<property name="webapp" value="${webapp.name}" />
+	<!-- 目标项目的Web 名称（WEB-INF上一级的目录名称） -->
+	<property name="webroot" value="${web.root}" />
+	<!-- 引用java工具类-->
+	<property name="exportFile" value="./web/WEB-INF/classes"> </property>
+	<!-- svn改动文件列表信息 -->
+	<property name="compare.path.file" value="${increment.file.path}/${webapp}_${increment.file}" />
+	<!-- 减量文件编译后文件列表信息 -->
+	<property name="decrement.file.list" value="${export.decrement_files_list.path}/${webapp}_${export.decrement_files_list}" />
+    <property name="basedirs" value="D:\apache-ant-1.9.4\svnant_lib"></property>
+	<!-- svn导出包存放目录 -->
+	<property name="export.svnX" location="${export.svn}/${webapp}" />
+	<!-- svn导出/切出旧版本文件存放目录 -->
+	<property name="bak_dest.pathX" location="${export.bak_dest}" />
+	<!-- svn导出/切出旧版本文件编译后存放目录 -->
+	<property name="bak_dist.pathX" location="${export.bak_dist}/${webapp}" />
+	<!-- svn导出/切出新版本文件存放目录 -->
+	<property name="dest.pathX" location="${export.dest}/${webapp}" />
+	<!-- svn导出/切出文件编译后存放目录 -->
+	<property name="dist.pathX" location="${export.dist}/${webapp}" />
+	<!-- svn增量文件保存目录 -->
+	<property name="increment.dest.pathX" location="${export.increment_dest}/${webapp}" />
+	<!-- svn增量文件编译后保存目录 -->
+	<property name="increment.dist.pathX" location="${export.increment_dist}/${webapp}" />
+	<!-- svn减量文件保存目录 -->
+	<property name="decrement.dest.pathX" location="${export.decrement_dest}/${webapp}" />
+	<!-- svn减量文件编译后保存目录 -->
+	<property name="decrement.dist.pathX" location="${export.decrement_dist}/${webapp}" />
+	
+	<path id="path.svnasnt">   <!-- 定义一个PATH元素,告诉ANT 到哪找SVNANT的类库 -->
+          <pathelement location="${basedirs}/svnant.jar"/>  <!-- SVNANT顶层包-->
+          <pathelement location="${basedirs}/svnClientAdapter.jar"/> <!-- SVNANT 与SVN通讯的适配器包-->         
+          <pathelement location="${basedirs}/svnjavahl.jar"/> <!-- SVNANT与SVN 通讯的JAVA BRIDGE包-->  
+    	 <pathelement location="${basedirs}/svnkit.jar"/> 
+          <!-- ... -->
+    </path>
+	<path id="svnAnts.lib">
+		<fileset dir="${svnants.classpath}">
+		<include name="**/*.jar" />
+		</fileset>
+	</path>
+	<path id="builjPros">
+		<fileset dir="${projects.classpath}">
+		<include name="**/**/*.jar" />
+		</fileset>
+		<fileset dir="${jdk.classpath}">
+		<include name="**/*.jar" />
+		</fileset>
+	</path>
+	<!--	D:\jdk1.7.0_45-->
+	<path id="builjJDK">
+			<fileset dir="${projects.classpath}">
+			<include name="**/**/*.jar" />
+			</fileset>
+			<fileset dir="${dest.pathX}/${web.root}/WEB-INF/lib">
+			<include name="*.jar" />
+			</fileset>
+		</path>
+
+	<path id="projiectBuild">
+			<fileset dir="${dest.pathX}">
+			<include name="**/**/*.jar" />
+			</fileset>
+		</path>
+	<!-- 初始化 清除源代码  创建文件夹 -->
+	<target name="init" description="init clean dirs">
+		<echo message="${svn.username}" />
+		<echo message="${svn.password}" />
+		<echo message="${webapp}" />
+		<echo message="${webroot}" />
+		<echo message="${compare.path.file}" />
+		<!--  
+		<delete dir="${decrement.dest.pathX}" failonerror="false" deleteonexit="true" />
+		<delete dir="${decrement.dist.pathX}" failonerror="false" deleteonexit="true" />
+		<delete dir="${dist.pathX}" failonerror="false" deleteonexit="true" />
+		<mkdir dir="${dist.pathX}"/>
+		<mkdir dir="${decrement.dest.pathX}"/>
+		<mkdir dir="${decrement.dist.pathX}"/>
+		-->
+		<delete dir="${increment.dist.pathX}" failonerror="false" deleteonexit="true" />
+		<delete dir="${bak_dest.pathX}" failonerror="false" deleteonexit="true" />
+		<delete dir="${bak_dist.pathX}" failonerror="false" deleteonexit="true" />
+		<delete dir="${dest.pathX}" failonerror="false" deleteonexit="true" />
+		<delete file="${compare.path.fileX}" failonerror="false" />
+		<delete file="${decrement.file.listX}" failonerror="false" />
+		<delete dir="${increment.dest.pathX}" failonerror="false" deleteonexit="true" />
+		<echo message="clean success!"></echo>
+			
+		<mkdir dir="${bak_dest.pathX}"/>
+		<mkdir dir="${dest.pathX}"/>
+		<mkdir dir="${increment.dest.pathX}"/>
+		<mkdir dir="${increment.dist.pathX}"/>
+		<echo message="create dir success!"></echo>
+		<echo message="init success!"></echo>
+		</target>
+    <typedef
+          resource="org/tigris/subversion/svnant/svnantlib.xml"
+          classpathref="svnAnts.lib" /> 
+      <svnSetting id="svn.settings"         
+          svnkit="true"  
+          javahl="false"
+          username="qiaoyh"  password="qiaoyh"/>
+ 
+	
+	<!--检出新版本-->
+    <target name="checkout_new">
+        <echo message=" revision--${svn.new_revision} dowm to ${dest.pathX}"></echo>
+        <svn refid="svn.settings"> 
+            <checkout recurse="true" url="${svn.url_new}" destPath="${dest.pathX}" revision="${svn.new_revision}" />
+        </svn>
+        <echo message="success!"></echo>
+    </target>
+	
+	<!--检出旧版本-->
+    <target name="checkout_old">
+        <echo message=" revision--${svn.old_revision} dowm to ${bak_dest.pathX}"></echo>
+        <svn refid="svn.settings"> 
+            <checkout recurse="true" url="${svn.url_new}" destPath="${bak_dest.pathX}" revision="${svn.old_revision}" />
+        </svn>
+        <echo message="success!"></echo>
+    </target>
+	
+	
+	
+	<!-- 导出增量和减量文件 -->
+	<target name="increment" depends="diff">
+		<java classname="com.cntest.util.ExportIncrementFiles" classpath="${svnants.classpath}/lib/increment.export.jar" fork="true">
+		<arg value="${compare.path.file}" />
+		<arg value="${dest.pathX}" />
+		<arg value="${increment.dest.pathX}" />
+		<arg value="${bak_dest.pathX}" />
+		<arg value="${decrement.dest.pathX}" />
+	</java>
+	</target>
+	
+	
+	<!-- 比较差异 增量文件 -->
+	<target name="diff" description="diff/compare project">
+		<echo message="different log downLoading! version ${svn.old_revision} compare ${svn.new_revision}"></echo>
+		<svn refid="svn.settings">
+			<diffSummarize oldUrl="${bak.svn.url}" oldTargetRevision="${svn.old_revision}" newUrl="${bak.svn.url}" newTargetRevision="${svn.new_revision}" outFile="${compare.path.file}" recurse="true" />
+		</svn>
+	</target>
+	<!-- 利用JDT编译 -->
+	<!-- 利用JDT编译 -->
+	<target name="compile_jdt_increment">
+		<echo>compile ${increment.dest.pathX} ......</echo>
+		<delete dir="${increment.dist.pathX}/WEB-INF/classes" failonerror="false" deleteonexit="true" />
+		<mkdir dir="${increment.dist.pathX}/WEB-INF/classes" />
+	</target>
+	
+	<!-- 利用JDT编译 -->
+		<target name="compile_jdt_new">
+			<echo>compile ${dest.pathX} ......</echo>
+		</target>
+
+	<!-- 利用JDT编译SVN 最新项目 -->
+	<target name="compile_svn">
+	<!-- 回调任务 -->
+	<antcall target="compile_jdt_new">
+	<param name="dest_path" value="${dest.pathX}" />
+	<param name="dist_path" value="${dist.pathX}" />
+	<param name="jdt_buildpath" value="builjPros" />
+	</antcall>
+	</target>
+
+
+	<!-- 将全部项目的class 建立jar包(新版本) -->
+	<target name="jar" depends="compile_svn">
+	<jar destfile="${dest.pathX}/${web.root}/WEB-INF/lib/${webapp}.jar" level="9" compress="true" encoding="utf-8" basedir="${dest.pathX}/classes">
+	<manifest>
+	<attribute name="Implementation-Version" value="Version: 2.2" />
+	</manifest>
+	</jar>
+	</target>
+	
+	<target name="compile_new_all">
+		<delete dir="${dest.pathX}/classes" failonerror="false" deleteonexit="true" />
+		<mkdir dir="${dest.pathX}/classes" />
+		<javac destdir="${dest.pathX}/classes" includeantruntime="no" encoding="UTF-8" debug="true">
+			<src path="${dest.pathX}"/>
+			<compilerarg line="-encoding UTF-8"/>
+			<compilerarg value="-XDignore.symbol.file"/>
+			<compilerarg value="-Xlint:unchecked"/>
+		    <compilerarg value="-Xlint:deprecation"/>
+		    <compilerarg value="-Xlint"/>
+			<classpath refid="builjPros" />
+		</javac>
+	</target>
+	
+	<target name="compile" depends="compile_jdt_increment">
+		<echo message="strat compile increment file! encoding UTF-8"></echo>
+		<javac destdir="${increment.dist.pathX}/WEB-INF/classes" includeantruntime="no" encoding="UTF-8" debug="true">
+			<src path="${increment.dest.pathX}"/>
+			<compilerarg line="-encoding UTF-8"/>
+			<compilerarg value="-XDignore.symbol.file"/>
+			<compilerarg value="-Xlint:unchecked"/>
+		    <compilerarg value="-Xlint:deprecation"/>
+		    <compilerarg value="-Xlint"/>
+			<classpath refid="builjJDK" />
+		</javac>
+		<echo message="compile increment file success!"></echo>
+		<echo message="compile increment success! goto copy files! include .properties、.js、.ftl、.xml、.txt、.html"></echo>
+		<copy todir="${increment.dist.pathX}" failonerror="false">
+		<fileset dir="${increment.dest.pathX}/src/main/${webroot}" includes="**" />
+		</copy>
+		<copy todir="${increment.dist.pathX}/WEB-INF/classes" failonerror="false">
+		<fileset dir="${increment.dest.pathX}/src/main/resources" includes="**/*.xml, **/*.properties, **/*.xsd" />
+		</copy>
+	</target>
+	<!-- 全部打包 -->
+	<target name="war_increment">
+	<copy todir="${increment.dist.pathX}/WEB-INF" file="${dest.pathX}/src/main/webapp/WEB-INF/web.xml" />
+	<antcall target="war">
+	<param name="dest_path" value="${increment.dest.pathX}" />
+	<param name="dist_path" value="${increment.dist.pathX}" />
+	</antcall>
+	</target>
+	
+	
+	<target name="war">
+		<tstamp>
+		<format property="DSTAMP" pattern="yyyyMMdd" locale="zh" />
+		<format property="TSTAMP" pattern="HHmmss" locale="zh" />
+		</tstamp>
+		<rename src="${basewars}.war" dest="${basewars}.war.${DSTAMP}_${TSTAMP}"/>
+		<war destfile="${basewars}.war" basedir="${bak_dest.pathX}" webxml="${bak_dest.pathX}/WEB-INF/web.xml" />
+	</target>
+	<!--解压前初始化文件夹-->
+	<target name="unzip">
+			<java classname="com.cntest.util.Unzip" classpath="${svnants.classpath}/lib/increment.export.jar" fork="true">
+			<arg value="${basewars}.war" />
+			<arg value="${bak_dest.pathX}/" />
+		</java>
+	</target>
+	
+	<target name="copyInc" depends="unzip">
+		<copy todir="${bak_dest.pathX}" overwrite="true">
+			<fileset dir="${increment.dist.pathX}" includes="**"></fileset>
+		</copy>
+	</target>
+	
+	<!-- 备份原来的war包-->
+	<target name="backUpWar">
+			<sshexec command="/home/vincent/fxpt_war_backup.sh" 
+			host="${host.address}" username="${host.name}" password="${host.password}"  trust="true"/>
+	</target>
+	
+	<target name="remote" >
+		<scp todir="${host.name}@${host.address}:${tomcat.dir}/webapps" password="${host.password}" trust="true">
+			<fileset file="${export.svn}/basewar/${webapp}.war"></fileset>
+		</scp>
+	</target>
+	
+	<target name="resStart">
+			<sshexec command="/home/vincent/fxpt_restart.sh" 
+			host="${host.address}" username="${host.name}" password="${host.password}"  trust="true"/>
+	</target>
+		<!-- 文件操作备份 -->
+	<target name="makeMessage">
+				<tstamp>
+				<format property="DSTAMP" pattern="yyyyMMdd" locale="zh" />
+				<format property="TSTAMP" pattern="HHmmss" locale="zh" />
+				</tstamp>
+				<java classname="com.cntest.util.MakeTxt" classpath="${svnants.classpath}/lib/increment.export.jar" fork="true">
+				<arg value="${export.svn}/fxptChangeLog.txt" />
+				<arg value="${svn.old_revision}" />
+				<arg value="${svn.new_revision}" />
+				<arg value="${DSTAMP}_${TSTAMP}" />
+				<arg value="0" />
+			</java>
+	</target>
+	
+	<!-- 文件操作备份 -->
+		<target name="makeMessage1">
+					<tstamp>
+					<format property="DSTAMP" pattern="yyyyMMdd" locale="zh" />
+					<format property="TSTAMP" pattern="HHmmss" locale="zh" />
+					</tstamp>
+					<java classname="com.cntest.util.MakeTxt" classpath="${svnants.classpath}/lib/increment.export.jar" fork="true">
+					<arg value="${export.svn}/fxptChangeLog.txt" />
+					<arg value="${svn.old_revision}" />
+					<arg value="${svn.new_revision}" />
+					<arg value="${DSTAMP}_${TSTAMP}" />
+					<arg value="1" />
+				</java>
+		</target>
+		
+		
+		<!-- 文件操作备份 -->
+		<target name="makeMessagePentaho">
+					<tstamp>
+					<format property="DSTAMP" pattern="yyyyMMdd" locale="zh" />
+					<format property="TSTAMP" pattern="HHmmss" locale="zh" />
+					</tstamp>
+					<java classname="com.cntest.util.MakeTxt" classpath="${svnants.classpath}/lib/increment.export.jar" fork="true">
+					<arg value="${export.svn}/fxptChangeLog.txt" />
+					<arg value="null" />
+					<arg value="null" />
+					<arg value="${DSTAMP}_${TSTAMP}" />
+					<arg value="1" />
+				</java>
+		</target>
+	<target name="pentahoImport">
+		<exec executable="/home/pentaho/biserver-ce-5.3.0.0-213/biserver-ce/sync_auto.sh" failonerror="false"/>
+	</target>
+	
+	<target name="removePentaho">
+			<sshexec command="rm -rf /home/pentaho/biserver-ce-5.3.0.0-213/biserver-ce/tomcat/webapps/pentaho/*.rptdesign" 
+			host="${host.address}" username="${host.name}" password="${host.password}"  trust="true"/>
+	</target>
+	<target name="removeView">
+			<sshexec command="rm -rf /home/pentaho/biserver-ce-5.3.0.0-213/biserver-ce/tomcat/webapps/WebViewerExample/*.rptdesign" 
+			host="${host.address}" username="${host.name}" password="${host.password}"  trust="true"/>
+	</target>
+	
+	<!--126 cntest_fxpt_wh存储过程更新 -->
+	<target name="proUpdate">
+		<exec executable="/home/chenyou/sql/sql_pro_update.sh" failonerror="false"/>
+	</target>
+	
+	<!--单独的pentaho部署 -->
+	<target name="pentaho"  depends="makeMessagePentaho,removePentaho,removeView,pentahoImport"/>
+	<!--增量文件替换 打出完整war包  增量替换后的war包 -->
+	<target name="inc" depends="init,checkout_new,increment,compile_new_all,jar,compile,copyInc,war,makeMessage1,backUpWar,remote,resStart,removePentaho,removeView,pentahoImport" />
+	
+	<!-- 单独的jar包部署  ,makeMessage,backUpWar,remote,resStart-->
+	<target name="IncWar" depends="init,checkout_new,increment,compile_new_all,jar,compile,copyInc,war,makeMessage,backUpWar,remote,resStart" />
+	
+
+</project>

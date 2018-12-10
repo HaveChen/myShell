@@ -1,0 +1,5 @@
+xm_make_restart.sh   war包替换并且重启
+xm_restart.sh        war包重启
+sync_auto.sh	       pentaho资源文件备份及更新到其他服务器
+sync_backPentaho.sh    pentaho资源文件备份及上传SVN
+ 
